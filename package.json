@@ -1,0 +1,30 @@
+{
+  "name": "upload-file-using-aws",
+  "version": "1.0.0",
+  "description": "upload image file using aww s3 in node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon app.js",
+    "watch": "webpack --watch"
+  },
+  "author": "Karan",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/core": "^7.18.9",
+    "@babel/preset-env": "^7.18.9",
+    "@babel/preset-react": "^7.18.6",
+    "axios": "^0.27.2",
+    "babel-loader": "^8.2.5",
+    "css-loader": "^6.7.1",
+    "express": "^4.18.1",
+    "mongoose": "^6.5.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^2.0.19",
+    "react-dom": "^18.2.0",
+    "style-loader": "^3.3.1",
+    "uuid": "^8.3.2",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}
