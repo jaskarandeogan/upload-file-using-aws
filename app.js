@@ -1,5 +1,7 @@
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer"); //
+const { s3Uploadv2 } = require("./s3awservice");
 const uuid = require("uuid").v4;
 const app = express();
 
@@ -17,9 +19,13 @@ app.use(express.urlencoded({ extended: true }));
 //multiple file upload
 const uploadMultipleFiles = multer({ dest: "uploads/" });
 // you can also specify number of files that you want to accept
-app.post("/uploadMultipleFiles", uploadMultipleFiles.array("file", 2), (req, res) => {
-  res.json({ status: "success" });
-});
+app.post(
+  "/uploadMultipleFiles",
+  uploadMultipleFiles.array("file", 2),
+  (req, res) => {
+    res.json({ status: "success" });
+  }
+);
 
 // multi field uploads
 
@@ -35,7 +41,8 @@ app.post("/uploadMultiple", multiUpload, (req, res) => {
 });
 
 //multiple file upload with custom name
-const storage = multer.diskStorage({
+//for better performance we will not use this method as it will store the image in physical memory; since we dont have to store it in physical memory, we we will store it on cloud.
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads");
   },
@@ -46,8 +53,47 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+//to store the image instead on cloud. for that we might have to store the image o=on RAM for a moment
+
+const cloudStorage = multer.memoryStorage();
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.split("/")[0] == "image") {
+    cb(null, true);
+  } else {
+    cb(new Error("file is not of correct type", false));
+  }
+};
+
+const upload = multer({
+  cloudStorage,
+  fileFilter,
+  limits: { fileSize: 1000000, files: 2 },
+});
 // you can also specify number of files that you want to accept
-app.post("/upload", upload.array("file", 2), (req, res) => {
-  res.json({ status: "success" });
+app.post("/upload", upload.array("file", 2), async (req, res) => {
+  const file = req.files;
+  try {
+    const results = await s3Uploadv2(file);
+    res.json({ status: "success", results });
+    console.log(results);
+  } catch (err) {
+    console.log(err);
+  }
+  // res.json({ status: "success", results });
+});
+
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code == "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "file is too large",
+      });
+    }
+    if (error.code == "LIMIT_FILE_COUNT") {
+      return res.status(400).json({
+        message: "file limit reached",
+      });
+    }
+  }
 });
